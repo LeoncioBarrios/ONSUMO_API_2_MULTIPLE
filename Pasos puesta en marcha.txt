@@ -1,0 +1,105 @@
+Detener servicio.
+
+1.- Crear nueva Base de Datos Mutuales.
+	1.1.- Crear tabla Mutuales
+	1.2.- Actualizar datos de cada mutual en la tabla Mutuales.
+	1.3.- Pasar las tablas:
+		  · UserAPI.
+		  · ClientCredentials.
+
+2.- Crear una Base de Datos por cada mutual.
+
+3.- Actualizar los archivos:
+	* make_request.py
+	* conexion_db.py
+	* modelo.py
+
+4.- Actulizar varibles en el archivo .env.
+	* Parámetros de conexión a la Base de Datos por defecto Mutuales.
+	* Pasar los parámetros USUARIO_SERVICIO_BICA y PASSWORD_SERVICIO_BICA a la tabla Mutuales.
+	* Pasar los parámetros EMAIL_RECIPIENTS e EMAIL_ENVIO_CC a la tabla Mutuales.
+
+5.- Limpiar archivo make_request.py (Comentarios código producción/Desarrollo, códigos control, etc.)
+
+Arrancar servicio
+
+*****************************************************************************************************************
+
+
+
+*	1.- Crear la nueva Base de Datos: Mutuales.
+*	2.- Crear la tabla Mutuales en la Base de Datos Mutuales.
+*	3.- Pasar las tablas: UserAPI y ClientCredentials de la BD BICAMutual a la BD Mutuales.
+----------------------------------------------------------------------------------------------	
+*	4.- Crear la carpeta del proyecto CONSUMO_API_2_MULTIPLE.
+*		4.1.- Copiar los archivos del proyecto CONSUMO_API_2_MULTIPLE:
+*			  - conexion_db-py
+*			  - make_request.py
+*			  - modelo.py
+*			  - requirements.txt
+*			  - Config_nssm.txt
+*			  - nssm.txt
+*		4.2.- Copiar archivo .env del proyecto original al nuevo proyecto y actualizar.
+*		4.3.- Crear Entorno Virtual: venv:
+*			- py -m virtualenv venv.
+*			- Activar el Entorno Virtual.
+*			- Instalar dependencias y requerimientos: pip install -t requirements.txt.
+	------------------------------------------------------------------------------------------
+*	5.- Crear el proyecto API_Multiple.
+*		5.1.- Copiar los archivos del proyecto API_Multiple:
+*			  - conexion_db_c.py
+*			  - main.py
+*			  - modelo.py
+*			  - requirements.txt
+*			  - cliente_movimiento.py
+*			  - cliente_token-body-text-param.py
+*			  - Config_nssm.txt
+*			  - nssm.txt
+*		5.2.- Copiar el archivo .env del proyecto original al nuevo proyecto y actualizar.
+*		5.3.- Crear Entorno Virtual: venv:
+*			- py -m virtualenv venv.
+*			- Activar el Entorno Virtual.
+*			- Instalar dependencias y requerimientos: pip install -t requirements.txt.
+	------------------------------------------------------------------------------------------
+*	6.- Crear los servicios con NSSM:
+*		6.1.- Crear el servicio WebAPI_Multiple.
+*		6.2.- Crear el servicio CONSUMO_API_2_MULTIPLE.
+	
+	7.- Detener los servicios:
+		- WebAPI.
+		- CONSUMO_API_2.
+		- Configurar estos servicios como Disabled.
+	
+	8.- Arrancar los nuevos servicios:
+		- WebAPIMultiple.
+		- CONSUMO_API_2_MULTIPLE.
+	
+	==========================================================================================
+	Correcciones:
+	==========================================================================================
+	CONSUMO_API_2_MULTIPLE:
+*	1.- Actualizar: make_request.py->make_request():
+*		· __USUARIO = DBCredentials.USUARIO_SERVICIO_BICA
+*		· __PASSWORD = DBCredentials.PASSWORD_SERVICIO_BICA
+*	2.- Actualizar: modelo.py->DBCredentials:
+*		· USUARIO_SERVICIO_BICA = None
+*		· PASSWORD_SERVICIO_BICA = None
+	
+	
+	==========================================================================================
+	Revertir pruebas => Producción
+	==========================================================================================
+	- .env: DATA_BASE ="Mutuales"
+	- main.py: los 2 EndPoints (borrar ruta pruebas y activar ruta correcta)
+	- variable oauth2: Borrar la de pruebas y activar la correcta
+	
+	==========================================================================================
+	Puntos a considerar
+	==========================================================================================
+	- El usuario de la Base de Datos de la Mutual debe tener derechos sobre la BD de la mutual y de la BD Mutuales.
+	
+	
+	
+usr: usrAPIBica
+pas: Clave2023_
+

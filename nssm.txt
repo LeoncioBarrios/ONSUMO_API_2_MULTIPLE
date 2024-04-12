@@ -1,0 +1,43 @@
+NSSM, o Non-Sucking Service Manager, es una herramienta de código abierto para la gestión de servicios en sistemas operativos Windows.
+
+Es una aplicación portable, por lo tanto, no necesita de instalación.
+
+En la carpeta C:\NSSM, están los ejecutables de esta herramienta clasificada según el tipo de sistema operativo: 32/64 bits.
+
+Al ejecutarlo sin argumentos muestra una breve ayuda de cómo utilizarlo.
+
+
+Pasos para crear un servicio que ejecute la CONSUMO_API_2_MULTIPLE.
+==========================================================
+1.- Ubicarse en la carpeta donde se encuentra el ejecutable NSSM.EXE según el tipo del sistema operativo (32/64 bits).
+
+2.- Crear el servicio:
+	* Correr la aplicación de la siguiente manera: nssm.exe install <nombre_del_servicio>, por ejemplo:
+	  nssm install CONSUMO_API_2_MULTIPLE
+
+3.- Configurar el servicio:
+	* Pestaña Application:
+		- Path: Indicar la ruta del intérprete de python del entorno virtual:
+			C:\MAASoft\APIRest\CONSUMO_API_2_MULTIPLE\venv\Scripts\python.exe
+		- Startup subdirectory: Indicar la ruta dónde se ubica la aplicación flask (make_request.py):
+			C:\MAASoft\APIRest\CONSUMO_API_2_MULTIPLE
+		- Arguments: Indicar en nombre de la aplicación a levantar (make_request.py):
+			make_request.py
+	* Pestaña Details:
+		- Display name: Indicar el nombre con el que se va a identificar el servicio, por ejemplo:
+			CONSUMO_API_2_MULTIPLE
+		- Description: Colocar una breve descripción del Servicio (opcional), por ejemplo:
+			Servicio CONSUMO_API_2_MULTIPLE.
+			Servicio que opera con múltiples Mutuales registradas.
+		- Startup type: Establece el tipo de inicio del servicio:
+			Automatic
+
+4.- Guardar la configuración:
+	* Dar clic al botón "Install service" para que se cree el servicio.
+
+5.- Iniciar el servicio:
+	* Abrir el administrador/Visor de servicios de Windows (services.msc)
+	* Buscar el servicio que se acaba de crear: CONSUMO_API_2_MULTIPLE.
+	* Hacer clic botón derecho y seleccionar "iniciar".
+
+	  

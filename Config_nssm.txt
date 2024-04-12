@@ -1,0 +1,21 @@
+* Application.
+	1.- Path:
+		C:\MAASoft\APIRest\CONSUMO_API_2_MULTIPLE\venv\Scripts\python.exe
+
+	2.- Startup subdirectory:
+		C:\MAASoft\APIRest\CONSUMO_API_2_MULTIPLE
+
+	3.- Arguments:
+		make_request.py
+		C:\MAASoft\APIRest\CONSUMO_API_2\make_request.py
+
+* Details.
+	1.- Display name:
+		CONSUMO_API_2_MULTIPLE
+	
+	2.- Description:
+		Servicio CONSUMO_API_2_MULTIPLE
+		Servicio que opera con múltiples Mutuales registradas.
+	
+	3.- Startup type:
+		Automatic
