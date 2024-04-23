@@ -34,13 +34,8 @@ EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 EMAIL_SUBJECT = os.getenv("EMAIL_SUBJECT")
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 
-#MINUTOS_CTRL = int(os.getenv('MINUTOS_CTRL'))    # Frecuencia de envío de correos de notificación. (Minutos)
 SEGUNDOS_CTRL = int(os.getenv('SEGUNDOS_CTRL'))   # Frecuencia de envío de correos de notificación. (Segundos)
-
-#HORAS_CTRL = int(os.getenv('HORAS_CTRL'))        # Frecuencia de reinicio de envío de correos de todas las notificaciones. (Horas)
 MINUTOS_CTRL = int(os.getenv('MINUTOS_CTRL'))     # Frecuencia de reinicio de envío de correos de todas las notificaciones. (Minutos)
-
-CONVENIO = os.getenv('CONVENIO')
 
 #---------------------------------------------------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
@@ -144,6 +139,7 @@ def verificar_saldos():
 		DBCredentials.EMAIL_ENVIO_CC = mutual[7]
 		DBCredentials.USUARIO_SERVICIO_BICA = mutual[10]
 		DBCredentials.PASSWORD_SERVICIO_BICA = mutual[11]
+		DBCredentials.CONVENIO = mutual[12]
 		
 		make_request()
 
@@ -181,7 +177,7 @@ def make_request():
 		SaldoMutual = {
 			"SaldoMutual": {
 				"CantidadRegistros": len(SaldosInformados),
-				"Convenio": CONVENIO,
+				"Convenio": DBCredentials.CONVENIO,
 				"SaldosInformados": SaldosInformados
 			}
 		}
