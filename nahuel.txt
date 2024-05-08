@@ -1,0 +1,12 @@
+Nahuel Montenegro
+10:34 a.m.
+http://192.168.177.170/WCF.SaldoMutual/SaldoMutualService.svc/InformarSaldos
+
+Nahuel Montenegro
+10:35 a.m.
+http://192.168.177.170:30001/WCF.SaldoMutual/SaldoMutualService.svc/InformarSaldos
+
+Nahuel Montenegro
+10:38 a.m.
+usuWCFSaldoMutual username
+password 151118WCFSaldoMutual

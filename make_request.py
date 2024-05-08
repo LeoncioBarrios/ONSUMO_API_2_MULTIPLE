@@ -140,6 +140,7 @@ def verificar_saldos():
 		DBCredentials.USUARIO_SERVICIO_BICA = mutual[10]
 		DBCredentials.PASSWORD_SERVICIO_BICA = mutual[11]
 		DBCredentials.CONVENIO = mutual[12]
+		DBCredentials.URL_SERVICIO_BICA = mutual[13]
 		
 		make_request()
 
@@ -152,7 +153,7 @@ def make_request():
 	cuentas_actualizadas = search_datos()
 	
 	if cuentas_actualizadas:
-		__URL = os.environ.get('URL')
+		__URL = DBCredentials.URL_SERVICIO_BICA
 		__USUARIO = DBCredentials.USUARIO_SERVICIO_BICA
 		__PASSWORD = DBCredentials.PASSWORD_SERVICIO_BICA
 		
@@ -350,12 +351,10 @@ def local_response():
 
 
 #-- Después de cada minutos indicados en la variable MINUTOS_CTRL, se llama a la función make_request()
-#schedule.every(MINUTOS_CTRL).minutes.do(verificar_saldos)   # Para PRODUCCIÓN.
 #schedule.every(SEGUNDOS_CTRL).seconds.do(verificar_saldos)  # Para PRODUCCIÓN.
 schedule.every(2).seconds.do(verificar_saldos)               # Para pruebas locales.
 
 #-- Transcurridas cada horas indicadas en la variable HORAS_CTRL, se llama a la función notificar_todo()
-#schedule.every(HORAS_CTRL).hours.do(reset_notificar_todo)      # Para PRODUCCIÓN.
 #schedule.every(MINUTOS_CTRL).minutes.do(reset_notificar_todo)  # Para PRODUCCIÓN.
 schedule.every(30).seconds.do(reset_notificar_todo)             # Para pruebas locales.
 
