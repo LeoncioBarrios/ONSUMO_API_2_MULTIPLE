@@ -20,7 +20,7 @@ from modelo import DBCredentials
 #-- Diccionario para registrar las cuentas con errores para ser notificadas y las veces
 #-- que se ha notificado: {nro_cta: n_veces}
 ctas_errores_informadas = dict()
-#-- Dict para controlar el reinicio de todas las notificaciones por el tiempo programadao con HORAS_CTRL: {mutual: True}
+#-- Dict para controlar el reinicio de todas las notificaciones por el tiempo programadao con MINUTOS_CTRL: {mutual: True}
 notificar_todo = dict()
 
 #-- Cargar las variables de entorno. ---------------------------------------------------------------------------------
@@ -30,7 +30,6 @@ EMAIL_SERVER = os.getenv('EMAIL_SERVER')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
 EMAIL_USERNAME = os.getenv('EMAIL_USERNAME')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
-
 EMAIL_SUBJECT = os.getenv("EMAIL_SUBJECT")
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 
@@ -69,9 +68,10 @@ def send_email(subject, sender, recipients, text_body, cc=None, bcc=None, html_b
 	Thread(target=_send_async_email, args=(app, msg)).start()
 
 
-def correo(body=None):
-	subject = EMAIL_SUBJECT     # Asunto.
-	sender = EMAIL_SENDER       # Correo remitente.
+def correo(subject=None, body=None):
+	if not subject:
+		subject = EMAIL_SUBJECT   # Asunto.
+	sender = EMAIL_SENDER         # Correo remitente.
 	
 	if DBCredentials.EMAIL_RECIPIENTS:
 		correos = re.split(r'[,; ]+', DBCredentials.EMAIL_RECIPIENTS)
@@ -156,7 +156,7 @@ def make_request():
 		__URL = DBCredentials.URL_SERVICIO_BICA
 		__USUARIO = DBCredentials.USUARIO_SERVICIO_BICA
 		__PASSWORD = DBCredentials.PASSWORD_SERVICIO_BICA
-		
+
 		headers = {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json; charset=UTF-8'
@@ -184,148 +184,156 @@ def make_request():
 		}
 		
 		body = SaldoMutual
-		
-		# Realizar la solicitud POST al endpoint con los encabezados, la autenticación y el cuerpo del mensaje
-		#*response = requests.post(__URL, headers=headers, auth=(__USUARIO, __PASSWORD), json=body)   # Para PRODUCCIÓN!!
-		response = json.loads(local_response())  # Para pruebas locales (simular request).
-		
-		#*if response.status_code == 200:    # Para PRODUCCIÓN!!
-		if response["status_code"] == 200:   # Para DESARROLLO!!
+
+		try:
 			
-			#*respuesta = response.json()       # Para PRODUCCIÓN!!
-			respuesta = response["contenido"]   # Para DESARROLLO!!
+			# Realizar la solicitud POST al endpoint con los encabezados, la autenticación y el cuerpo del mensaje
+			#response = json.loads(local_response())  # Para pruebas locales (simular request).          # Para DESARROLLO!!
+			response = requests.post(__URL, headers=headers, auth=(__USUARIO, __PASSWORD), json=body)   # Para PRODUCCIÓN!!
 			
-			# Crear lista de Cuentas SaldosInformados
-			ListaCuentasInformadas = []
-			for elemento1 in SaldosInformados:
-				ListaCuentasInformadas.append(elemento1['CuentaMutual'])
-			
-			# Crear lista de Cuentas ErroresSaldos
-			ListaErroresSaldos = []
-			for elemento1 in respuesta["InformarSaldosResult"]["ErroresSaldos"]:
-				ListaErroresSaldos.append(elemento1['CuentaMutual'])
-			
-			# Crear lista de cuentas para cambio de estado en la tabla
-			ListaActualizarEstados = list(filter(lambda cta: cta not in ListaErroresSaldos, ListaCuentasInformadas))
-			
-			# Actualizar en la Base de Datos
-			# Implementar el procedimiento almacenado
-			if ListaActualizarEstados:
-				try:
-					with ConexionMutual.get_connection() as conexion:
-						with conexion.cursor() as cursor:
-							for cuenta in ListaActualizarEstados:
-								comandoSQL ="exec dbo.SaldoMovimiento @icuenta=?, @bmodificado=?"
-								param = (cuenta, False)
-								cursor.execute(comandoSQL, param)
-								conexion.commit()
+			#if response["status_code"] == 200:   # Para DESARROLLO!!
+			if response.status_code == 200:      # Para PRODUCCIÓN!!
 				
-				except Exception as e:
-					lin1 = "<h3>No se pudo establecer la conexión con el servidor!!!!</h3>"
-					lin2 = f"<p>{e}</p>"
-					body = lin1 + lin2
-					correo(body)
-			
-			if ListaErroresSaldos:
-				#-- Flag para determinar si hay que notificar cuando haya algo nuevo por notificar.
-				notif = False
+				#respuesta = response["contenido"]   # Para DESARROLLO!!
+				respuesta = response.json()         # Para PRODUCCIÓN!!
 				
-				for cta in ListaErroresSaldos:
-					#-- Comprobar si existe algo nuevo por notificar, si es cierto, se procederá a notificar todo.
+				# Crear lista de Cuentas SaldosInformados
+				ListaCuentasInformadas = []
+				for elemento1 in SaldosInformados:
+					ListaCuentasInformadas.append(elemento1['CuentaMutual'])
+				
+				# Crear lista de Cuentas ErroresSaldos
+				ListaErroresSaldos = []
+				for elemento1 in respuesta["InformarSaldosResult"]["ErroresSaldos"]:
+					ListaErroresSaldos.append(elemento1['CuentaMutual'])
+				
+				# Crear lista de cuentas para cambio de estado en la tabla
+				ListaActualizarEstados = list(filter(lambda cta: cta not in ListaErroresSaldos, ListaCuentasInformadas))
+
+				# Actualizar en la Base de Datos
+				# Implementar el procedimiento almacenado
+				if ListaActualizarEstados:
+					try:
+						with ConexionMutual.get_connection() as conexion:
+							with conexion.cursor() as cursor:
+								for cuenta in ListaActualizarEstados:
+									comandoSQL ="exec dbo.SaldoMovimiento @icuenta=?, @bmodificado=?"
+									param = (cuenta, False)
+									cursor.execute(comandoSQL, param)
+									conexion.commit()
 					
+					except Exception as e:
+						lin1 = "<h3>No se pudo establecer la conexión con el servidor!!!!</h3>"
+						lin2 = f"<p>{e}</p>"
+						body = lin1 + lin2
+						correo(body)
+				
+				if ListaErroresSaldos:
+					#-- Flag para determinar si hay que notificar cuando haya algo nuevo por notificar.
+					notif = False
 					
-					#-- Comprobar si existe la mutual en el dict de control.
-					if DBCredentials.CUIT not in ctas_errores_informadas:
-						ctas_errores_informadas.update({DBCredentials.CUIT: {}})
-						notif = True
+					for cta in ListaErroresSaldos:
+						#-- Comprobar si existe algo nuevo por notificar, si es cierto, se procederá a notificar todo.
 						
-						#-- Agregar la mutual para ctrl notificar_todo.
-						notificar_todo.update({DBCredentials.CUIT: True})
-						
-						break
-					
-					else:
-						#-- Comprobar la cuenta de la mutual en el dict de control.
-						if cta not in ctas_errores_informadas[DBCredentials.CUIT]:
-							notif = True
-							break
-				
-				#-- Si hay algo nuevo por notificar o si ya ha pasado el tiempo (HORAS_CTRL) para volver a notificar todo lo ya notificado de haber.
-				if notif or notificar_todo[DBCredentials.CUIT]:
-					
-					#-- Preparar el cuero del correo para su envío.
-					intro1 = f"<p>Cantidad de Registros Procesado: <strong>{respuesta['InformarSaldosResult']['CantidadRegistrosProcesados']}</strong></p>"
-					intro2 = f"<p>Cantidad de Registros Incorrectos: <strong>{respuesta['InformarSaldosResult']['CantidadRegistrosIncorrectos']}</strong></p>"
-					
-					p1 = """
-							<table>
-								<thead>
-									<tr>
-										<th style='width: 14%; text-align: left; border: 1px solid black;'>Cuenta Mutual</th>
-										<th style='width: 50%; text-align: left;border: 1px solid black;'>Descripción Error</th>
-										<th style='width: 14%; text-align: left;border: 1px solid black;'>Fecha/Hora Saldo</th>
-										<th style='width: 12%; text-align: right;border: 1px solid black;'>Saldo</th>
-										<th style='width: 10%; text-align: right;border: 1px solid black;'>Veces notificada</th>
-									</tr>
-								</thead>
-							<tbody>"""
-					
-					p3 = "</tbody></table>"
-					
-					p2 = ""
-					
-					for cta in respuesta["InformarSaldosResult"]["ErroresSaldos"]:
 						#-- Comprobar si existe la mutual en el dict de control.
-						if cta['CuentaMutual'] not in ctas_errores_informadas[DBCredentials.CUIT]:
-							#-- Si se está notificando por primera vez, se agrega al dict de control y la cant. de veces es 1.
-							ctas_errores_informadas[DBCredentials.CUIT].update({cta['CuentaMutual']:1})
+						if DBCredentials.CUIT not in ctas_errores_informadas:
+							ctas_errores_informadas.update({DBCredentials.CUIT: {}})
+							notif = True
 							
+							#-- Agregar la mutual para ctrl notificar_todo.
+							notificar_todo.update({DBCredentials.CUIT: True})
+							
+							break
+						
 						else:
-							#-- Si ya había sido notificada, se actualiza la cantidad de veces.
-							ctas_errores_informadas[DBCredentials.CUIT][cta['CuentaMutual']] +=1
-						
-						""" <td style='vertical-align: top; text-align: right;'>{ctas_errores_informadas[cta['CuentaMutual']]}</td> """
-						
-						p2 = p2 + f"""
-						<tr>
-							<td style='vertical-align: top;'>{cta['CuentaMutual']}</td>
-							<td style='vertical-align: top;'>{cta['DetalleError']}</td>
-							<td style='vertical-align: top;'>{cta['FechaHoraSaldo']}</td>
-							<td style='vertical-align: top; text-align: right;'>{cta['Saldo']}</td>
-							<td style='vertical-align: top; text-align: right;'>{ctas_errores_informadas[DBCredentials.CUIT][cta['CuentaMutual']]}</td>
-						</tr>"""
-						
-					#-- Se ensambla el cuerpo del mensaje del correo.
-					body = intro1 + intro2 + p1 + p2 + p3
+							#-- Comprobar la cuenta de la mutual en el dict de control.
+							if cta not in ctas_errores_informadas[DBCredentials.CUIT]:
+								notif = True
+								break
 					
-					#-- Se invoca a la función para que se configure el correo y su envío.
-					correo(body)
-					
-					#-- Se establece el flag para que se vulva a notificar todo lo que hay por notificar en el tiempo programado con HORAS_CTRL.
-					notificar_todo[DBCredentials.CUIT] = False
+					#-- Si hay algo nuevo por notificar o si ya ha pasado el tiempo (HORAS_CTRL) para volver a notificar todo lo ya notificado de haber.
+					if notif or notificar_todo[DBCredentials.CUIT]:
+						
+						#-- Preparar el cuero del correo para su envío.
+						intro1 = f"<p>Cantidad de Registros Procesado: <strong>{respuesta['InformarSaldosResult']['CantidadRegistrosProcesados']}</strong></p>"
+						intro2 = f"<p>Cantidad de Registros Incorrectos: <strong>{respuesta['InformarSaldosResult']['CantidadRegistrosIncorrectos']}</strong></p>"
+						
+						p1 = """
+								<table>
+									<thead>
+										<tr>
+											<th style='width: 14%; text-align: left; border: 1px solid black;'>Cuenta Mutual</th>
+											<th style='width: 50%; text-align: left;border: 1px solid black;'>Descripción Error</th>
+											<th style='width: 14%; text-align: left;border: 1px solid black;'>Fecha/Hora Saldo</th>
+											<th style='width: 12%; text-align: right;border: 1px solid black;'>Saldo</th>
+											<th style='width: 10%; text-align: right;border: 1px solid black;'>Veces notificada</th>
+										</tr>
+									</thead>
+								<tbody>"""
+						
+						p3 = "</tbody></table>"
+						
+						p2 = ""
+						
+						for cta in respuesta["InformarSaldosResult"]["ErroresSaldos"]:
+							#-- Comprobar si existe la mutual en el dict de control.
+							if cta['CuentaMutual'] not in ctas_errores_informadas[DBCredentials.CUIT]:
+								#-- Si se está notificando por primera vez, se agrega al dict de control y la cant. de veces es 1.
+								ctas_errores_informadas[DBCredentials.CUIT].update({cta['CuentaMutual']:1})
+								
+							else:
+								#-- Si ya había sido notificada, se actualiza la cantidad de veces.
+								ctas_errores_informadas[DBCredentials.CUIT][cta['CuentaMutual']] +=1
+							
+							p2 = p2 + f"""
+							<tr>
+								<td style='vertical-align: top;'>{cta['CuentaMutual']}</td>
+								<td style='vertical-align: top;'>{cta['DetalleError']}</td>
+								<td style='vertical-align: top;'>{cta['FechaHoraSaldo']}</td>
+								<td style='vertical-align: top; text-align: right;'>{cta['Saldo']}</td>
+								<td style='vertical-align: top; text-align: right;'>{ctas_errores_informadas[DBCredentials.CUIT][cta['CuentaMutual']]}</td>
+							</tr>"""
+							
+						#-- Se ensambla el cuerpo del mensaje del correo.
+						body = intro1 + intro2 + p1 + p2 + p3
+						
+						#-- Se invoca a la función para que se configure el correo y su envío.
+						correo(body)
+						
+						#-- Se establece el flag para que se vulva a notificar todo lo que hay por notificar en el tiempo programado con HORAS_CTRL.
+						notificar_todo[DBCredentials.CUIT] = False
+					else:
+						#-- Quitar las ctas. que se han corregido del dict. de control.
+						copia = ctas_errores_informadas[DBCredentials.CUIT].copy()
+						
+						for cta in copia:
+							if cta not in ListaErroresSaldos:
+								#-- Si la cta. fue corregida, eliminar de control.
+								ctas_errores_informadas[DBCredentials.CUIT].pop(cta)
+							
+						del copia
+				
 				else:
-					#-- Quitar las ctas. que se han corregido del dict. de control.
-					copia = ctas_errores_informadas[DBCredentials.CUIT].copy()
-					
-					for cta in copia:
-						if cta not in ListaErroresSaldos:
-							#-- Si la cta. fue corregida, eliminar de control.
-							ctas_errores_informadas[DBCredentials.CUIT].pop(cta)
-						
-					del copia
+					#-- Si no se reportan ctas. con errores es porque se solucionaron, por lo tanto se debe blanquear el dict. de control.
+					if DBCredentials.CUIT in ctas_errores_informadas:
+						ctas_errores_informadas.pop(DBCredentials.CUIT)
 			
 			else:
-				#-- Si no se reportan ctas. con errores es porque se solucionaron, por lo tanto se debe blanquear el dict. de control.
-				#ctas_errores_informadas.clear()
-				if DBCredentials.CUIT in ctas_errores_informadas:
-					ctas_errores_informadas.pop(DBCredentials.CUIT)
-		
-		else:
-			lin1 = "<h3>Error en la solicitud</h3>"
-			lin2 = f"<h4>status code: {response.status_code}</h4>"
+				lin1 = "<h3>Error en la solicitud</h3>"
+				lin2 = f"<h4>status code: {response.status_code}</h4>"
+				body = lin1 + lin2
+
+				correo(body)
+
+		except Exception as e:
+			print("Ha ocurrido un error con la conexión al servicio", e)
+			subject = "Fallo servicio BICA (Informar Saldos)"
+			lin1 = "<h3>Ha ocurrido un error con el servicio BICA para informar los Saldos</h3>"
+			lin2 = f"<p>{e}</p>"
 			body = lin1 + lin2
 
-			correo(body)
+			correo(subject=subject, body= body)
+
 
 
 def reset_notificar_todo():
@@ -338,7 +346,7 @@ def reset_notificar_todo():
 
 #-- Función para pruebas locales.
 def local_response():
-	if DBCredentials.DATA_BASE == 'BICAMutual':
+	if DBCredentials.DATA_BASE == 'PruebaBICAMutual':
 		archivo = 'datos_bica.json'
 	else:
 		archivo = 'datos_otra.json'
@@ -351,15 +359,15 @@ def local_response():
 
 
 #-- Después de cada minutos indicados en la variable MINUTOS_CTRL, se llama a la función make_request()
-#schedule.every(SEGUNDOS_CTRL).seconds.do(verificar_saldos)  # Para PRODUCCIÓN.
-schedule.every(2).seconds.do(verificar_saldos)               # Para pruebas locales.
+schedule.every(SEGUNDOS_CTRL).seconds.do(verificar_saldos)   # Para PRODUCCIÓN.
+#schedule.every(2).seconds.do(verificar_saldos)              # Para pruebas locales.
 
 #-- Transcurridas cada horas indicadas en la variable HORAS_CTRL, se llama a la función notificar_todo()
-#schedule.every(MINUTOS_CTRL).minutes.do(reset_notificar_todo)  # Para PRODUCCIÓN.
-schedule.every(30).seconds.do(reset_notificar_todo)             # Para pruebas locales.
+schedule.every(MINUTOS_CTRL).minutes.do(reset_notificar_todo)   # Para PRODUCCIÓN.
+#schedule.every(20).seconds.do(reset_notificar_todo)            # Para pruebas locales.
 
 # Bucle para que la tarea de programación
-# Sigue funcionando todo el tiempo.
+# Siga funcionando todo el tiempo.
 
 #-- El bucle while se utiliza para verificar y ejecutar las tareas programadas en intervalos regulares. 
 #-- schedule.run_pending() verifica si alguna tarea programada debe ejecutarse y time.sleep(1) evita 
