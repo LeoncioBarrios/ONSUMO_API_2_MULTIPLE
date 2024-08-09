@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_mail import Mail
+from datetime import datetime
 
 from conexion_db import Conexion, ConexionMutual
 
@@ -52,6 +53,14 @@ app.config['MAIL_USE_TLS'] = True
 
 mail = Mail(app)
 #----------------------------------------------------------------------------------------------------
+def write_log(message):
+	if not os.path.exists("logs"):
+		os.makedirs("logs")
+	
+	with open(f"logs/{DBCredentials.CUIT}.txt", "a", encoding="utf-8") as file:
+		file.write(message)
+
+
 def _send_async_email(app, msg):
 	with app.app_context():
 		try:
@@ -132,6 +141,7 @@ def verificar_saldos():
 	
 	for mutual in mutuales:
 		DBCredentials.CUIT = mutual[1]
+		DBCredentials.MUTUAL = mutual[2]
 		DBCredentials.DATA_BASE = mutual[3]
 		DBCredentials.USER_DB = mutual[4]
 		DBCredentials.PASS_DB = mutual[5]
@@ -188,14 +198,14 @@ def make_request():
 		try:
 			
 			# Realizar la solicitud POST al endpoint con los encabezados, la autenticación y el cuerpo del mensaje
-			#response = json.loads(local_response())  # Para pruebas locales (simular request).          # Para DESARROLLO!!
-			response = requests.post(__URL, headers=headers, auth=(__USUARIO, __PASSWORD), json=body)   # Para PRODUCCIÓN!!
+			response = json.loads(local_response())  # Para pruebas locales (simular request).          # Para DESARROLLO!!
+			#response = requests.post(__URL, headers=headers, auth=(__USUARIO, __PASSWORD), json=body)   # Para PRODUCCIÓN!!
 			
-			#if response["status_code"] == 200:   # Para DESARROLLO!!
-			if response.status_code == 200:      # Para PRODUCCIÓN!!
+			if response["status_code"] == 200:   # Para DESARROLLO!!
+			#if response.status_code == 200:      # Para PRODUCCIÓN!!
 				
-				#respuesta = response["contenido"]   # Para DESARROLLO!!
-				respuesta = response.json()         # Para PRODUCCIÓN!!
+				respuesta = response["contenido"]   # Para DESARROLLO!!
+				#respuesta = response.json()         # Para PRODUCCIÓN!!
 				
 				# Crear lista de Cuentas SaldosInformados
 				ListaCuentasInformadas = []
@@ -209,9 +219,10 @@ def make_request():
 				
 				# Crear lista de cuentas para cambio de estado en la tabla
 				ListaActualizarEstados = list(filter(lambda cta: cta not in ListaErroresSaldos, ListaCuentasInformadas))
-
+				
 				# Actualizar en la Base de Datos
 				# Implementar el procedimiento almacenado
+				
 				if ListaActualizarEstados:
 					try:
 						with ConexionMutual.get_connection() as conexion:
@@ -226,7 +237,7 @@ def make_request():
 						lin1 = "<h3>No se pudo establecer la conexión con el servidor!!!!</h3>"
 						lin2 = f"<p>{e}</p>"
 						body = lin1 + lin2
-						correo(body)
+						correo(body=body)
 				
 				if ListaErroresSaldos:
 					#-- Flag para determinar si hay que notificar cuando haya algo nuevo por notificar.
@@ -251,9 +262,8 @@ def make_request():
 								notif = True
 								break
 					
-					#-- Si hay algo nuevo por notificar o si ya ha pasado el tiempo (HORAS_CTRL) para volver a notificar todo lo ya notificado de haber.
+					#-- Si hay algo nuevo por notificar o si ya ha pasado el tiempo (MINUTOS_CTRL) para volver a notificar todo lo ya notificado de haber.
 					if notif or notificar_todo[DBCredentials.CUIT]:
-						
 						#-- Preparar el cuero del correo para su envío.
 						intro1 = f"<p>Cantidad de Registros Procesado: <strong>{respuesta['InformarSaldosResult']['CantidadRegistrosProcesados']}</strong></p>"
 						intro2 = f"<p>Cantidad de Registros Incorrectos: <strong>{respuesta['InformarSaldosResult']['CantidadRegistrosIncorrectos']}</strong></p>"
@@ -293,13 +303,12 @@ def make_request():
 								<td style='vertical-align: top; text-align: right;'>{cta['Saldo']}</td>
 								<td style='vertical-align: top; text-align: right;'>{ctas_errores_informadas[DBCredentials.CUIT][cta['CuentaMutual']]}</td>
 							</tr>"""
-							
+						
 						#-- Se ensambla el cuerpo del mensaje del correo.
 						body = intro1 + intro2 + p1 + p2 + p3
 						
 						#-- Se invoca a la función para que se configure el correo y su envío.
-						correo(body)
-						
+						correo(body=body)
 						#-- Se establece el flag para que se vulva a notificar todo lo que hay por notificar en el tiempo programado con HORAS_CTRL.
 						notificar_todo[DBCredentials.CUIT] = False
 					else:
@@ -312,28 +321,36 @@ def make_request():
 								ctas_errores_informadas[DBCredentials.CUIT].pop(cta)
 							
 						del copia
+					
+					#-- #-- Escribir en el log los saldos notificados sin problemas:
+					if ListaActualizarEstados:
+						message = f"{datetime.today()} | Saldos notificados. | Cuentas sin problemas: {ListaActualizarEstados} | Cuentas con problemas: {ListaErroresSaldos}\n"
+						write_log(message)
 				
 				else:
 					#-- Si no se reportan ctas. con errores es porque se solucionaron, por lo tanto se debe blanquear el dict. de control.
 					if DBCredentials.CUIT in ctas_errores_informadas:
 						ctas_errores_informadas.pop(DBCredentials.CUIT)
-			
+					
+					#-- Escribir en el log todo satisfactoriamente procesado:
+					message = f"{datetime.today()} | Todos los saldos notificados sin problemas. | Cuentas: {ListaActualizarEstados}\n"
+					write_log(message)
+				
 			else:
 				lin1 = "<h3>Error en la solicitud</h3>"
 				lin2 = f"<h4>status code: {response.status_code}</h4>"
 				body = lin1 + lin2
-
-				correo(body)
-
+				
+				correo(body=body)
+		
 		except Exception as e:
 			print("Ha ocurrido un error con la conexión al servicio", e)
 			subject = "Fallo servicio BICA (Informar Saldos)"
 			lin1 = "<h3>Ha ocurrido un error con el servicio BICA para informar los Saldos</h3>"
 			lin2 = f"<p>{e}</p>"
 			body = lin1 + lin2
-
-			correo(subject=subject, body= body)
-
+			
+			correo(subject=subject, body=body)
 
 
 def reset_notificar_todo():
@@ -346,7 +363,8 @@ def reset_notificar_todo():
 
 #-- Función para pruebas locales.
 def local_response():
-	if DBCredentials.DATA_BASE == 'PruebaBICAMutual':
+	# if DBCredentials.DATA_BASE == 'PruebaBICAMutual':
+	if DBCredentials.DATA_BASE == 'BICAMutual':
 		archivo = 'datos_bica.json'
 	else:
 		archivo = 'datos_otra.json'
@@ -359,12 +377,12 @@ def local_response():
 
 
 #-- Después de cada minutos indicados en la variable MINUTOS_CTRL, se llama a la función make_request()
-schedule.every(SEGUNDOS_CTRL).seconds.do(verificar_saldos)   # Para PRODUCCIÓN.
-#schedule.every(2).seconds.do(verificar_saldos)              # Para pruebas locales.
+#schedule.every(SEGUNDOS_CTRL).seconds.do(verificar_saldos)   # Para PRODUCCIÓN.
+schedule.every(2).seconds.do(verificar_saldos)              # Para pruebas locales.
 
 #-- Transcurridas cada horas indicadas en la variable HORAS_CTRL, se llama a la función notificar_todo()
-schedule.every(MINUTOS_CTRL).minutes.do(reset_notificar_todo)   # Para PRODUCCIÓN.
-#schedule.every(20).seconds.do(reset_notificar_todo)            # Para pruebas locales.
+#schedule.every(MINUTOS_CTRL).minutes.do(reset_notificar_todo)   # Para PRODUCCIÓN.
+schedule.every(20).seconds.do(reset_notificar_todo)            # Para pruebas locales.
 
 # Bucle para que la tarea de programación
 # Siga funcionando todo el tiempo.
@@ -375,3 +393,11 @@ schedule.every(MINUTOS_CTRL).minutes.do(reset_notificar_todo)   # Para PRODUCCI�
 while True:
 	schedule.run_pending()
 	time.sleep(1)
+
+
+
+
+# ListaCuentasInformadas = [1000026, 1000133, 1000747]
+# ListaErroresSaldos = [1000026, 1000747]
+# ListaActualizarEstados = [1000133]
+ 

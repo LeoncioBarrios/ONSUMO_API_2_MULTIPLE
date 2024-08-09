@@ -2,15 +2,9 @@
 	"status_code": 200,
 	"contenido": {
 		"InformarSaldosResult": {
-			"CantidadRegistrosProcesados": 3,
+			"CantidadRegistrosProcesados": 2,
 			"CantidadRegistrosIncorrectos": 1,
 			"ErroresSaldos": [
-				{
-					"CuentaMutual": 2000055,
-					"DetalleError": "La cuenta mutual no tiene cuenta asociada en Banco Bica.",
-					"FechaHoraSaldo": "2024-03-27 17:14:17",
-					"Saldo": 55.0
-				}
 			]
 		}
 	}

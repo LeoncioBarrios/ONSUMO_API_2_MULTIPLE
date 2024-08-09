@@ -90,6 +90,7 @@ print(ListaActualizarEstados)
 
  """
 
+""" 
 d1 = "Leoncio"
 d2 = "Barrios"
 d3 = "Hernández"
@@ -100,3 +101,25 @@ cadena = (f"Priemera linea {d1} \
 
 
 print(cadena)
+
+ """
+
+SaldosInformados = [
+    {
+        "CuentaMutual": 1000026,
+        "Saldo": 250000.00,
+        "FechaHoraSaldo": "2023-08-11 12:53:8"
+    },
+    {
+        "CuentaMutual": 1000133,
+        "Saldo": 50000.00,
+        "FechaHoraSaldo": "2023-08-11 12:53:8"
+    },
+    {
+        "CuentaMutual": 1000747,
+        "Saldo": 15087.68,
+        "FechaHoraSaldo": "2023-08-11 17:14:17"
+    }
+]
+
+

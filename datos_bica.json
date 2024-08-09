@@ -3,20 +3,8 @@
 	"contenido": {
 		"InformarSaldosResult": {
 			"CantidadRegistrosProcesados": 3,
-			"CantidadRegistrosIncorrectos": 1,
+			"CantidadRegistrosIncorrectos": 2,
 			"ErroresSaldos": [
-				{
-					"CuentaMutual": 1000026,
-					"DetalleError": "La cuenta mutual no tiene cuenta asociada en Banco Bica.",
-					"FechaHoraSaldo": "2023-08-11 12:53:8",
-					"Saldo": 230.63
-				},
-				{
-					"CuentaMutual": 1000747,
-					"DetalleError": "La cuenta mutual no tiene cuenta asociada en Banco Bica.",
-					"FechaHoraSaldo": "2023-08-11 17:14:17",
-					"Saldo": 0.0
-				}
 			]
 		}
 	}
