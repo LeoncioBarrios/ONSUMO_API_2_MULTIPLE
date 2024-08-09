@@ -309,7 +309,7 @@ def make_request():
 						
 						#-- Se invoca a la función para que se configure el correo y su envío.
 						correo(body=body)
-						#-- Se establece el flag para que se vulva a notificar todo lo que hay por notificar en el tiempo programado con HORAS_CTRL.
+						#-- Se establece el flag para que se vulva a notificar todo lo que hay por notificar en el tiempo programado con MINUTOS_CTRL.
 						notificar_todo[DBCredentials.CUIT] = False
 					else:
 						#-- Quitar las ctas. que se han corregido del dict. de control.
@@ -322,7 +322,7 @@ def make_request():
 							
 						del copia
 					
-					#-- #-- Escribir en el log los saldos notificados sin problemas:
+					#-- Escribir en el log los saldos notificados sin problemas:
 					if ListaActualizarEstados:
 						message = f"{datetime.today()} | Saldos notificados. | Cuentas sin problemas: {ListaActualizarEstados} | Cuentas con problemas: {ListaErroresSaldos}\n"
 						write_log(message)
