@@ -117,7 +117,14 @@ def search_datos():
 	
 	except Exception as e:
 		detail="No se pudo establecer la conexión con el servidor!!!"
+		detail += f"\nMutual: {DBCredentials.MUTUAL}, CUIT: {DBCredentials.CUIT}"
 		print(detail, e)
+
+		lin1 = "<h3>No se pudo establecer la conexión con el servidor!!!!</h3>"
+		lin2 = f"<p>Mutual: <b>{DBCredentials.MUTUAL}</b>, CUIT: <b>{DBCredentials.CUIT}</b></p>"
+		lin3 = f"<p>{e}</p>"
+		body = lin1 + lin2 + lin3
+		correo(body=body)
 	
 	return datos
 
@@ -131,7 +138,14 @@ def get_mutuales():
 	
 	except Exception as e:
 		detail="No se pudo establecer la conexión con el servidor!!!"
+		detail += f"\nMutual: {DBCredentials.MUTUAL}, CUIT: {DBCredentials.CUIT}"
 		print(detail, e)
+
+		lin1 = "<h3>No se pudo establecer la conexión con el servidor!!!!</h3>"
+		lin2 = f"<p>Mutual: <b>{DBCredentials.MUTUAL}</b>, CUIT: <b>{DBCredentials.CUIT}</b></p>"
+		lin3 = f"<p>{e}</p>"
+		body = lin1 + lin2 + lin3
+		correo(body=body)
 	
 	return mutuales
 
@@ -235,8 +249,9 @@ def make_request():
 					
 					except Exception as e:
 						lin1 = "<h3>No se pudo establecer la conexión con el servidor!!!!</h3>"
-						lin2 = f"<p>{e}</p>"
-						body = lin1 + lin2
+						lin2 = f"<p>Mutual: <b>{DBCredentials.MUTUAL}</b>, CUIT: <b>{DBCredentials.CUIT}</b></p>"
+						lin3 = f"<p>{e}</p>"
+						body = lin1 + lin2 + lin3
 						correo(body=body)
 				
 				if ListaErroresSaldos:
@@ -338,8 +353,9 @@ def make_request():
 				
 			else:
 				lin1 = "<h3>Error en la solicitud</h3>"
-				lin2 = f"<h4>status code: {response.status_code}</h4>"
-				body = lin1 + lin2
+				lin2 = f"<p>Mutual: <b>{DBCredentials.MUTUAL}</b>, CUIT: <b>{DBCredentials.CUIT}</b></p>"
+				lin3 = f"<h4>status code: {response.status_code}</h4>"
+				body = lin1 + lin2 + lin3
 				
 				correo(body=body)
 		
@@ -347,8 +363,9 @@ def make_request():
 			print("Ha ocurrido un error con la conexión al servicio", e)
 			subject = "Fallo servicio BICA (Informar Saldos)"
 			lin1 = "<h3>Ha ocurrido un error con el servicio BICA para informar los Saldos</h3>"
-			lin2 = f"<p>{e}</p>"
-			body = lin1 + lin2
+			lin2 = f"<p>Mutual: <b>{DBCredentials.MUTUAL}</b>, CUIT: <b>{DBCredentials.CUIT}</b></p>"
+			lin3 = f"<p>{e}</p>"
+			body = lin1 + lin2 + lin3
 			
 			correo(subject=subject, body=body)
 
